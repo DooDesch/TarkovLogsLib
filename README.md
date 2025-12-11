@@ -1,6 +1,14 @@
 # TarkovLogsLib
 
-Typed parsing toolkit for Escape from Tarkov client logs. Converts raw log text into structured JSON according to the schemas in `docs`, and can optionally enrich events with EFT domain data (items, quests, traders, locations).
+Typed parsing, enrichment, and analytics toolkit for Escape from Tarkov client logs. Turns raw log text into strongly-typed JSON, optionally resolves EFT domain data, and provides higher-level statistics/insights for analysis.
+
+## Features
+
+- Typed parsers for the official EFT log families documented in `docs/` (application, backend, backendCache, backend_queue, errors, files-checker, insurance, inventory, network-connection, network-messages, objectPool, output, player, push-notifications, seasons, spatial-audio, aiData, aiErrors).
+- Node and browser entry points (`tarkov-logs-lib` and `tarkov-logs-lib/browser`).
+- Optional enrichment via `TarkovDevGameDataProvider` (GraphQL) or `TarkovTrackerDataProvider` (static JSON) with `GameDataCache` for caching.
+- Aggregated statistics with `TarkovLogsAnalytics` and higher-level timelines/quests/network insights with `TarkovLogsInsights`.
+- Helper scripts to parse fixtures and emit derived datasets (`dist-process`, `dist-stats`, `dist-insights`).
 
 ## Install
 
@@ -10,7 +18,7 @@ pnpm add tarkov-logs-lib
 npm install tarkov-logs-lib
 ```
 
-## Usage
+## Node quick start
 
 ```ts
 import {
@@ -18,38 +26,28 @@ import {
   TarkovDevGameDataProvider,
   GameDataCache,
   TarkovLogsAnalytics,
+  TarkovLogsInsights,
 } from "tarkov-logs-lib";
 
 const parser = new TarkovLogsParser({
-  gameDataProvider: new TarkovDevGameDataProvider(), // optional
+  gameDataProvider: new TarkovDevGameDataProvider(), // optional enrichment
   cache: new GameDataCache({ ttlMs: 60_000 }),
   enrichGameData: true, // set false for pure parsing
 });
 
-const result = await parser.parseFile(
-  "path/to/log_YYYY.MM.DD_HH-MM-SS_VERSION application_000.log"
-);
-console.log(result.events[0]);
-```
+const results = await parser.parseDirectory("path/to/log/session-folder");
 
-### Parse multiple files or a directory
-
-```ts
-const many = await parser.parseFiles([
-  "/logs/application_000.log",
-  "/logs/backend_000.log",
-]);
-const fromDir = await parser.parseDirectory("/logs/session-folder");
-
-const analytics = new TarkovLogsAnalytics(fromDir, {
+const stats = await new TarkovLogsAnalytics(results, {
   provider: new TarkovDevGameDataProvider(),
   cache: new GameDataCache({ ttlMs: 60_000 }),
-});
-const stats = await analytics.computeStatistics();
-console.log(stats);
+}).computeStatistics();
+
+const insights = await new TarkovLogsInsights(results, {
+  provider: new TarkovDevGameDataProvider(),
+}).compute();
 ```
 
-### Event structure
+## Parsed data shape
 
 Each parsed event is strongly typed per log family (e.g., `ApplicationLogEvent`, `BackendLogEvent`). Shared fields:
 
@@ -57,20 +55,20 @@ Each parsed event is strongly typed per log family (e.g., `ApplicationLogEvent`,
 - `message`, `eventFamily`, `continuation?`, `fields` (type-specific structured data)
 - `logType` discriminant
 
-`ParsedLogResult` also provides `meta` (earliest/latest timestamp, build version, session prefix).
+`ParsedLogResult` also provides `meta` (earliest/latest timestamp, build version, session prefix) and the originating `filePath`.
 
-### Game data enrichment
+## Game data enrichment
 
 Set `enrichGameData: true` and provide a `GameDataProvider`:
 
 - `TarkovDevGameDataProvider` (GraphQL: `https://api.tarkov.dev/graphql`) resolves items, quests, traders, and maps.
 - `TarkovTrackerDataProvider` (static JSON: `https://raw.githubusercontent.com/TarkovTracker/tarkovdata/master`) provides offline-friendly items/quests/traders/maps.
 
-Responses are optionally cached with `GameDataCache` (file-backed, configurable TTL).
+Responses can be cached with `GameDataCache` (file-backed, configurable TTL).
 
-## Browser Usage
+## Browser usage
 
-For browser environments (no Node.js), use the `/browser` entry point:
+For browser environments, use the `/browser` entry point:
 
 ```ts
 import {
@@ -96,30 +94,35 @@ const data = await insights.compute();
 ```
 
 The browser entry point:
-- Does not use `fs`, `path`, `glob` or any Node.js-only modules
-- Includes `parseText` and `parseTexts` helpers for parsing raw text
-- Includes a browser-safe `TarkovLogsInsights` class (without external API resolution)
-- Exports all type definitions
 
-## Log coverage
+- Avoids Node-only modules (`fs`, `path`, `glob`).
+- Exposes `parseText` / `parseTexts`, `defaultParsers`, types, and a browser-safe `TarkovLogsInsights`.
 
-Parsers follow the schemas in `../docs` for:
+## Schemas and coverage
 
-- application, backend, backendCache, backend_queue, errors, files-checker, insurance, inventory
-- network-connection, network-messages, objectPool, output, player, push-notifications, seasons, spatial-audio, aiData, aiErrors
+Log schemas, correlations, and assumptions live in `docs/`:
 
-Multi-line events are stitched using header lines with `|` separators; continuations are attached to the originating event.
+- Master reference: `docs/log_schema_master_reference.md`
+- Directory map and relations: `docs/log_directory_map.md`, `docs/log_relations.md`, `docs/log_correlations.md`
+- Per-log-family schemas: `docs/logtype_*.md` (application, backend, backendCache, backend_queue, errors, files-checker, insurance, inventory, network-connection, network-messages, objectPool, output, player, push-notifications, seasons, spatial-audio, aiData, aiErrors)
 
-## Development
+Multi-line events are stitched via header lines with `|`; continuations are attached to the originating event.
+
+## Generated datasets and scripts
+
+```bash
+pnpm process ./tests/fixtures/logs   # parse fixtures into dist-process/
+pnpm stats                           # compute analytics into dist-stats/stats.json (uses dist-process)
+pnpm insights                        # compute high-level insights into dist-insights/insights.json (uses dist-process)
+```
+
+## Development & testing
 
 ```bash
 pnpm install
 pnpm build
 pnpm test           # unit tests
 pnpm test:e2e       # e2e/integration tests
-pnpm process ./tests/fixtures/logs   # parse logs to dist-process
-pnpm stats           # compute analytics into dist-stats/stats.json (uses dist-process)
-pnpm insights        # compute high-level insights into dist-insights/insights.json (uses dist-process)
 ```
 
-Assumptions and mappings come directly from `../docs/*.md`. If new log families appear, add a parser module in `src/parsers` and extend the typed unions in `src/types`.
+If new log families appear, add a parser module in `src/parsers` and extend the typed unions in `src/types`.
