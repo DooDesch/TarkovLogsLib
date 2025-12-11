@@ -80,9 +80,6 @@ function classifyApplicationMessage(
   ) {
     return { eventFamily: "matchmaking", fields: extractMatchFields(trimmed) };
   }
-  if (trimmed.startsWith("BattlEye environment validation failed")) {
-    return { eventFamily: "error", fields: extractMatchFields(trimmed) };
-  }
   return { eventFamily: "other", fields: extractMatchFields(trimmed) };
 }
 

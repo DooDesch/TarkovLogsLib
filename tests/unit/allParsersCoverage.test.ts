@@ -80,9 +80,12 @@ describe("Parser event-family coverage (synthetic)", () => {
     const content = [
       "2025-12-04 01:37:55.834|1.0.0.2.42157|Error|backend_queue|Error: Inventory queue failed on the following commands:",
       '[{"Action":"RestoreHealth","timestamp":1764808675}]',
+      "2025-12-04 01:37:55.835|1.0.0.2.42157|Error|backend_queue|Error: Inventory queue failed on the following commands:",
+      "not-json",
     ].join("\n");
     const events = parser.parse(content).events;
     expect(events[0].fields?.commands?.[0]?.Action).toBe("RestoreHealth");
+    expect(events[1].fields?.commands?.length).toBe(0);
   });
 
   it("errors families", () => {
@@ -156,6 +159,10 @@ describe("Parser event-family coverage (synthetic)", () => {
       "2025-12-08 15:17:56.230|1.0.0.2.42157|Info|network-connection|Exit to the 'Connected' state (address: 79.127.215.167:17002)",
       "2025-12-08 15:17:56.230|1.0.0.2.42157|Info|network-connection|Send connect (address: 79.127.215.167:17002, syn: False, asc: True)",
       "2025-12-08 15:17:56.230|1.0.0.2.42157|Error|network-connection|Timeout: Messages timed out after not receiving any message for 3006ms (address: 79.127.215.167:17002)",
+      "2025-12-08 15:17:56.230|1.0.0.2.42157|Info|network-connection|Send disconnect (address: 79.127.215.167:17002, reason: 5)",
+      "2025-12-08 15:17:56.230|1.0.0.2.42157|Info|network-connection|Disconnect (address: 79.127.215.167:17002)",
+      "2025-12-08 15:17:56.230|1.0.0.2.42157|Info|network-connection|Statistics (address: 79.127.215.167:17002, rtt: 42, lose: 3, sent: 100, received: 97)",
+      "2025-12-08 15:17:56.230|1.0.0.2.42157|Error|network-connection|Thread was being aborted.",
       "2025-12-08 15:17:56.230|1.0.0.2.42157|Info|network-connection|Other",
     ].join("\n");
     const families = parser.parse(content).events.map((e) => e.eventFamily);
@@ -165,25 +172,36 @@ describe("Parser event-family coverage (synthetic)", () => {
       "state_exit",
       "send_connect",
       "timeout",
+      "send_disconnect",
+      "disconnect",
+      "statistics",
+      "thread_aborted",
       "other",
     ]);
   });
 
   it("network-messages metrics", () => {
     const parser = new NetworkMessagesLogsParser();
-    const content =
-      "2025-12-08 15:18:29.010|1.0.0.2.42157|Info|network-messages|rpi:0.00|rwi:0.00|rsi:0.00|rci:0.00|ui:9.94|lui:11.18|lud:0";
-    const event = parser.parse(content).events[0];
+    const content = [
+      "2025-12-08 15:18:29.010|1.0.0.2.42157|Info|network-messages|rpi:0.00|rwi:0.00|rsi:0.00|rci:0.00|ui:9.94|lui:11.18|lud:0",
+      "2025-12-08 15:18:30.010|1.0.0.2.42157|Info|network-messages|badpart|rpi:NaN|ui:1.0",
+    ].join("\n");
+    const events = parser.parse(content).events;
+    const event = events[0];
     expect(event.fields?.rpi).toBe(0);
     expect(event.eventFamily).toBe("metrics");
+    expect(events[1].fields?.rpi).toBeUndefined();
   });
 
   it("objectPool events", () => {
     const parser = new ObjectPoolLogsParser();
-    const content =
-      "2025-12-07 21:12:18.406|1.0.0.2.42157|Error|objectPool|14265|Returning asset to pool when the pool is already destroyed. Please find out what causes this.";
-    const event = parser.parse(content).events[0];
-    expect(event.eventFamily).toBe("return_to_destroyed_pool");
+    const content = [
+      "2025-12-07 21:12:18.406|1.0.0.2.42157|Error|objectPool|14265|Returning asset to pool when the pool is already destroyed. Please find out what causes this.",
+      "2025-12-07 21:12:18.406|1.0.0.2.42157|Error|objectPool|14266|Some other message",
+    ].join("\n");
+    const events = parser.parse(content).events;
+    expect(events[0].eventFamily).toBe("return_to_destroyed_pool");
+    expect(events[1].eventFamily).toBe("other");
   });
 
   it("output hints", () => {
@@ -201,10 +219,12 @@ describe("Parser event-family coverage (synthetic)", () => {
     const content = [
       "2025-12-05 20:35:10.000|1.0.0.2.42157|Error|player|Could not find item with id: 692c8a936013b9204c0c8cc3",
       "2025-12-05 20:42:37.027|1.0.0.2.42157|Error|player|Could not find item address with id. ParentId: 672ab2ca36161f2c2c110dd6, ContainerId: hideout",
+      "2025-12-05 20:42:38.027|1.0.0.2.42157|Error|player|Other message",
     ].join("\n");
     const events = parser.parse(content).events;
     expect(events[0].fields?.itemId).toBe("692c8a936013b9204c0c8cc3");
     expect(events[1].fields?.containerId).toBe("hideout");
+    expect(events[2].eventFamily).toBe("other");
   });
 
   it("push-notifications families", () => {
@@ -212,22 +232,47 @@ describe("Parser event-family coverage (synthetic)", () => {
     const content = [
       "2025-12-08 15:02:13.954|1.0.0.2.42157|Info|push-notifications|NotificationManager: new params received url:  ws:wss://wsn/push/notifier/getwebsocket/token",
       "2025-12-08 15:02:14.954|1.0.0.2.42157|Info|push-notifications|LongPollingWebSocketRequest result Count:5 MessageType:Ping",
+      "2025-12-08 15:02:14.955|1.0.0.2.42157|Info|push-notifications|LongPollingWebSocketRequest received:512",
       "2025-12-08 15:02:15.954|1.0.0.2.42157|Info|push-notifications|NotificationManager.ProcessMessage | Received notification: Type: ChatMessageReceived, Time: 1, Duration: 2, ShowNotification: True",
       "2025-12-08 15:02:16.954|1.0.0.2.42157|Info|push-notifications|Got notification | ChatMessageReceived",
+      "2025-12-08 15:02:16.955|1.0.0.2.42157|Info|push-notifications|Got notification | UnknownType",
+      '{ "type": "unknownType", "eventId": "z1" }',
+      "2025-12-08 15:02:16.956|1.0.0.2.42157|Info|push-notifications|Got notification | GroupMatchUserLeave",
+      '{ "type": "GroupMatchUserLeave", "eventId": "z2", "odidLeaved": "od1" }',
+      "2025-12-08 15:02:16.957|1.0.0.2.42157|Info|push-notifications|Got notification | GroupMatchLeaderChanged",
+      '{ "type": "GroupMatchLeaderChanged", "eventId": "z3", "odid": "od2" }',
+      "2025-12-08 15:02:16.958|1.0.0.2.42157|Info|push-notifications|Got notification | GroupMatchInviteCancel",
+      '{ "type": "GroupMatchInviteCancel", "eventId": "z4" }',
+      "2025-12-08 15:02:16.959|1.0.0.2.42157|Info|push-notifications|Got notification | ping",
+      '{ "type": "ping", "eventId": "z5" }',
       "2025-12-08 15:02:17.954|1.0.0.2.42157|Info|push-notifications|NotificationManager.ProcessMessage | Received Service Notifications Ping",
       "2025-12-08 15:02:18.954|1.0.0.2.42157|Warn|push-notifications|Notification channel has been [dropped] by server error with code: 0",
       "2025-12-08 15:02:19.954|1.0.0.2.42157|Info|push-notifications|other",
     ].join("\n");
-    const families = parser.parse(content).events.map((e) => e.eventFamily);
+    const events = parser.parse(content).events;
+    const families = events.map((e) => e.eventFamily);
     expect(families).toEqual([
       "connection_params",
       "batch_result",
+      "received",
       "notification",
+      "simple_notification",
+      "simple_notification",
+      "simple_notification",
+      "simple_notification",
+      "simple_notification",
       "simple_notification",
       "ping",
       "dropped",
       "other",
     ]);
+    const unknownPayload = events[5].fields?.payload;
+    expect(unknownPayload?.type).toBe("unknownType");
+    expect(unknownPayload?.rawData).toBeTruthy();
+    expect(events[6].fields?.payload?.odidLeaved).toBe("od1");
+    expect(events[7].fields?.payload?.odid).toBe("od2");
+    expect(events[8].fields?.payload?.type).toBe("GroupMatchInviteCancel");
+    expect(events[9].fields?.payload?.type).toBe("ping");
   });
 
   it("seasons event", () => {
@@ -242,8 +287,10 @@ describe("Parser event-family coverage (synthetic)", () => {
     const parser = new SpatialAudioLogsParser();
     const content = [
       "2025-12-08 15:02:34.478|1.0.0.2.42157|Info|spatial-audio|Success initialize BetterAudio",
+      "2025-12-08 15:02:34.479|1.0.0.2.42157|Info|spatial-audio|SpatialAudioSystem Initialized",
       "2025-12-08 15:02:34.479|1.0.0.2.42157|Info|spatial-audio|Target audio quality = High",
       "2025-12-08 15:02:34.480|1.0.0.2.42157|Info|spatial-audio|Current DSP buffer length: 1024, buffers num: 4",
+      "2025-12-08 15:02:34.480|1.0.0.2.42157|Info|spatial-audio|ReverbPluginChecker enabled: True, check cooldown: 0.25",
       "2025-12-08 15:02:34.481|1.0.0.2.42157|Warn|spatial-audio|Reverb reset attempt 2/10",
       "2025-12-08 15:02:34.482|1.0.0.2.42157|Error|spatial-audio|[SpatialAudioSystem] can't init occlusion transform for player : System.NullReferenceException",
       "2025-12-08 15:02:34.483|1.0.0.2.42157|Info|spatial-audio|Other message",
@@ -251,8 +298,10 @@ describe("Parser event-family coverage (synthetic)", () => {
     const families = parser.parse(content).events.map((e) => e.eventFamily);
     expect(families).toEqual([
       "init_success",
+      "system_initialized",
       "target_quality",
       "dsp_stats",
+      "reverb_checker",
       "reverb_reset",
       "occlusion_error",
       "other",
