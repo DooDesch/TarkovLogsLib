@@ -297,6 +297,11 @@ export interface PushNotificationsLogEvent extends BaseLogEvent<"push-notificati
     errorCode?: number;
     /** Parsed notification payload from JSON continuation lines */
     payload?: NotificationPayload;
+    /** Extracted quest information from ChatMessageReceived notifications */
+    questId?: string;
+    questStatus?: string;
+    questRewardRubles?: number;
+    questRewardItems?: string[];
   };
 }
 

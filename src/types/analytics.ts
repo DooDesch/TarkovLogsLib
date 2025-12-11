@@ -106,6 +106,8 @@ export interface QuestStat {
   traderName?: string;
   status: "started" | "completed" | "failed" | "unknown";
   relatedEvents: AnyLogEvent[];
+  rewardRubles?: number;
+  rewardItems?: Record<string, number>;
 }
 
 export interface Statistics {

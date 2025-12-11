@@ -103,4 +103,28 @@ describe("Analytics & Insights correctness", () => {
     expect(insights.connectivity.totalTimeouts).toBe(1);
     expect(insights.connectivity.byAddress.addr.disconnect).toBe(1);
   });
+
+  it("uses questStatus from fields when message lacks keywords", async () => {
+    const pushLog = makeResult("push-notifications", [
+      event({
+        logType: "push-notifications",
+        message: "Got notification | ChatMessageReceived",
+        eventFamily: "simple_notification",
+        fields: {
+          questId: "6574e0dedc0d635f633a5805",
+          questStatus: "completed",
+          questRewardRubles: 12345,
+          questRewardItems: ["item_tpl_1", "item_tpl_1"],
+        },
+      }),
+    ]);
+
+    const analytics = new TarkovLogsAnalytics(pushLog);
+    const stats = await analytics.computeStatistics();
+    expect(stats.quests).toHaveLength(1);
+    expect(stats.quests[0].id).toBe("6574e0dedc0d635f633a5805");
+    expect(stats.quests[0].status).toBe("completed");
+    expect(stats.quests[0].rewardRubles).toBe(12345);
+    expect(stats.quests[0].rewardItems?.item_tpl_1).toBe(2);
+  });
 });

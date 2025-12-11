@@ -317,9 +317,28 @@ export class TarkovLogsAnalytics {
       }
     }
     quests[questId].relatedEvents.push(event);
-    if (event.message.toLowerCase().includes("completed")) quests[questId].status = "completed";
-    if (event.message.toLowerCase().includes("fail")) quests[questId].status = "failed";
-    if (event.message.toLowerCase().includes("start")) quests[questId].status = quests[questId].status === "unknown" ? "started" : quests[questId].status;
+    const questStatus =
+      (event.fields as any)?.questStatus?.toString().toLowerCase() ??
+      (event.message ?? "").toLowerCase();
+
+    if (questStatus.includes("completed") || questStatus === "success") quests[questId].status = "completed";
+    else if (questStatus.includes("fail")) quests[questId].status = "failed";
+    else if (questStatus.includes("start") || questStatus.includes("description")) {
+      quests[questId].status = quests[questId].status === "unknown" ? "started" : quests[questId].status;
+    }
+
+    // Aggregate rewards if present
+    const rewardRub = (event.fields as any)?.questRewardRubles;
+    if (typeof rewardRub === "number") {
+      quests[questId].rewardRubles = (quests[questId].rewardRubles ?? 0) + rewardRub;
+    }
+    const rewardItems = (event.fields as any)?.questRewardItems as string[] | undefined;
+    if (Array.isArray(rewardItems)) {
+      quests[questId].rewardItems = quests[questId].rewardItems ?? {};
+      for (const tpl of rewardItems) {
+        quests[questId].rewardItems![tpl] = (quests[questId].rewardItems![tpl] ?? 0) + 1;
+      }
+    }
   }
 
   private findQuestId(event: AnyLogEvent): string | undefined {

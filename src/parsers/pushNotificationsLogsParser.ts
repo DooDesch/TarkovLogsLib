@@ -106,11 +106,20 @@ function classify(
 
     // Try to parse JSON from continuation lines
     let payload: NotificationPayload | undefined;
+    let questInfo:
+      | {
+          questId?: string;
+          questStatus?: string;
+          questRewardRubles?: number;
+          questRewardItems?: string[];
+        }
+      | undefined;
     if (continuation.length > 0) {
       const jsonStr = continuation.join("\n");
       try {
         const parsed = JSON.parse(jsonStr);
         payload = parseNotificationPayload(notificationType, parsed);
+        questInfo = extractQuestInfo(notificationType, parsed);
       } catch {
         // JSON parsing failed, payload remains undefined
       }
@@ -121,6 +130,10 @@ function classify(
       fields: {
         notificationType,
         payload,
+        questId: questInfo?.questId,
+        questStatus: questInfo?.questStatus,
+        questRewardRubles: questInfo?.questRewardRubles,
+        questRewardItems: questInfo?.questRewardItems,
       },
     };
   }
@@ -137,6 +150,77 @@ function classify(
   }
 
   return { eventFamily: "other", fields: {} };
+}
+
+function extractQuestInfo(
+  notificationType: string | undefined,
+  data: Record<string, unknown>,
+): {
+  questId?: string;
+  questStatus?: string;
+  questRewardRubles?: number;
+  questRewardItems?: string[];
+} | undefined {
+  const typeLower = (notificationType ?? "").toLowerCase();
+  const dataTypeLower = String((data as any)?.type ?? "").toLowerCase();
+  const isQuestMessage =
+    typeLower === "chatmessagereceived" || dataTypeLower === "new_message" || dataTypeLower === "chatmessagereceived";
+  if (!isQuestMessage) return undefined;
+
+  const message = (data as any)?.message as Record<string, unknown> | undefined;
+  const templateId = message?.templateId as string | undefined;
+  let questId: string | undefined;
+  let questStatus: string | undefined;
+
+  if (templateId) {
+    const parts = templateId.split(/\s+/);
+    if (parts[0] && /^[0-9a-f]{24}$/i.test(parts[0])) questId = parts[0];
+    const lowerParts = parts.map((p) => (p ?? "").toLowerCase());
+    const hasQuestToken = lowerParts.some((p) => p.includes("success") || p.includes("fail") || p.includes("description"));
+    if (!hasQuestToken) {
+      // Likely a non-quest (e.g., Ragfair sale: "<hex> 0"), ignore to avoid false positives
+      return undefined;
+    }
+    if (lowerParts.some((p) => p.includes("success"))) questStatus = "completed";
+    else if (lowerParts.some((p) => p.includes("fail"))) questStatus = "failed";
+    else if (lowerParts.some((p) => p.includes("description") || p.includes("start"))) questStatus = "started";
+  }
+
+  const messageType = message?.type ? String(message.type).toLowerCase() : undefined;
+  if (!questStatus && messageType) {
+    if (messageType.includes("success")) questStatus = "completed";
+    else if (messageType.includes("fail")) questStatus = "failed";
+    else if (messageType.includes("description") || messageType.includes("start")) questStatus = "started";
+  }
+  if (!questStatus && typeof (message as any)?.text === "string") {
+    const textLower = ((message as any).text as string).toLowerCase();
+    if (textLower.includes("quest") || textLower.includes("start")) questStatus = "started";
+  }
+
+  let questRewardRubles: number | undefined;
+  const questRewardItems: string[] = [];
+  const items = (message as any)?.items?.data as Array<Record<string, unknown>> | undefined;
+  if (items) {
+    for (const item of items) {
+      const tpl = (item as any)?._tpl as string | undefined;
+      if (!tpl) continue;
+      if (tpl === "5449016a4bdc2d6f028b456f") {
+        const upd = (item as any)?.upd as Record<string, unknown> | undefined;
+        const count = typeof upd?.StackObjectsCount === "number" ? upd.StackObjectsCount : undefined;
+        if (typeof count === "number") questRewardRubles = count;
+      } else {
+        questRewardItems.push(tpl);
+      }
+    }
+  }
+
+  if (!questId && !questStatus && !questRewardItems.length && questRewardRubles === undefined) return undefined;
+  return {
+    questId,
+    questStatus,
+    questRewardRubles,
+    questRewardItems: questRewardItems.length ? questRewardItems : undefined,
+  };
 }
 
 function parseNotificationPayload(

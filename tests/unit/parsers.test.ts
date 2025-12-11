@@ -227,6 +227,31 @@ describe("PushNotificationsLogsParser", () => {
     expect(payload?.members?.[0]?.aid).toBe(2);
     expect(events[2].fields?.bytesReceived).toBe(512);
   });
+
+  it("extracts quest info from ChatMessageReceived notifications", () => {
+    const parser = new PushNotificationsLogsParser();
+    const content = [
+      "2025-12-08 15:02:20.000|1.0.0.2.42157|Info|push-notifications|Got notification | ChatMessageReceived",
+      '{ "type": "new_message", "message": { "templateId": "6574e0dedc0d635f633a5805 successMessageText", "type": "success", "items": { "data": [ { "_tpl": "5449016a4bdc2d6f028b456f", "upd": { "StackObjectsCount": 12345 } }, { "_tpl": "item_tpl_1" } ] } }, "dialogId": "prapor" }',
+    ].join("\n");
+    const events = parser.parse(content).events;
+    const questEvent = events.find((e) => e.fields?.questId);
+    expect(questEvent?.fields?.questId).toBe("6574e0dedc0d635f633a5805");
+    expect(questEvent?.fields?.questStatus).toBe("completed");
+    expect(questEvent?.fields?.questRewardRubles).toBe(12345);
+    expect(questEvent?.fields?.questRewardItems).toEqual(["item_tpl_1"]);
+  });
+
+  it("ignores non-quest ChatMessageReceived (e.g., Ragfair sale)", () => {
+    const parser = new PushNotificationsLogsParser();
+    const content = [
+      "2025-12-08 15:02:21.000|1.0.0.2.42157|Info|push-notifications|Got notification | ChatMessageReceived",
+      '{ "type": "new_message", "message": { "templateId": "5bdabfb886f7743e152e867e 0", "type": 4, "items": { "data": [ { "_tpl": "5449016a4bdc2d6f028b456f", "upd": { "StackObjectsCount": 999000 } } ] } } }',
+    ].join("\n");
+    const events = parser.parse(content).events;
+    const questEvent = events.find((e) => e.fields?.questId);
+    expect(questEvent).toBeUndefined();
+  });
 });
 
 describe("SpatialAudioLogsParser", () => {
