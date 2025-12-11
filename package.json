@@ -1,0 +1,39 @@
+{
+  "name": "tarkov-logs-lib",
+  "version": "1.0.0",
+  "description": "Typed parser and enrichment toolkit for Escape from Tarkov log files.",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./browser": {
+      "types": "./dist/browser.d.ts",
+      "import": "./dist/browser.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:e2e": "vitest run --dir tests/e2e",
+    "lint": "echo \"No linter configured\"",
+    "process": "pnpm build && node scripts/process-logs.mjs",
+    "stats": "pnpm build && node scripts/process-stats.mjs",
+    "insights": "pnpm build && node scripts/process-insights.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "glob": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.5",
+    "typescript": "^5.6.3",
+    "vitest": "^1.6.0"
+  }
+}

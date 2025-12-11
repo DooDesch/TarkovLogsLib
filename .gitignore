@@ -1,0 +1,8 @@
+node_modules
+dist
+dist-process
+dist-stats
+dist-insights
+.cache
+.DS_Store
+*.log
