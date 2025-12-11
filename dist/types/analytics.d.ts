@@ -61,6 +61,8 @@ export interface NetworkStats {
         totalPacketsSent?: number;
         /** Total packets received across all statistics events */
         totalPacketsReceived?: number;
+        /** Disconnect reasons counts */
+        disconnectReasons?: Record<string, number>;
     };
 }
 export interface PushStats {

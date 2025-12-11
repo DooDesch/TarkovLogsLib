@@ -232,7 +232,7 @@ describe("PushNotificationsLogsParser", () => {
     const parser = new PushNotificationsLogsParser();
     const content = [
       "2025-12-08 15:02:20.000|1.0.0.2.42157|Info|push-notifications|Got notification | ChatMessageReceived",
-      '{ "type": "new_message", "message": { "templateId": "6574e0dedc0d635f633a5805 successMessageText", "type": "success", "items": { "data": [ { "_tpl": "5449016a4bdc2d6f028b456f", "upd": { "StackObjectsCount": 12345 } }, { "_tpl": "item_tpl_1" } ] } }, "dialogId": "prapor" }',
+      '{ "type": "new_message", "message": { "templateId": "6574e0dedc0d635f633a5805 successMessageText", "type": "success", "text": "quest started", "items": { "data": [ { "_tpl": "5449016a4bdc2d6f028b456f", "upd": { "StackObjectsCount": 12345 } }, { "_tpl": "item_tpl_1" } ] } }, "dialogId": "prapor" }',
     ].join("\n");
     const events = parser.parse(content).events;
     const questEvent = events.find((e) => e.fields?.questId);
@@ -240,6 +240,9 @@ describe("PushNotificationsLogsParser", () => {
     expect(questEvent?.fields?.questStatus).toBe("completed");
     expect(questEvent?.fields?.questRewardRubles).toBe(12345);
     expect(questEvent?.fields?.questRewardItems).toEqual(["item_tpl_1"]);
+    expect(questEvent?.fields?.questTraderId).toBe("prapor");
+    expect(questEvent?.fields?.questMessageType).toBe("success");
+    expect(questEvent?.fields?.questMessageText).toBe("quest started");
   });
 
   it("ignores non-quest ChatMessageReceived (e.g., Ragfair sale)", () => {
@@ -251,6 +254,20 @@ describe("PushNotificationsLogsParser", () => {
     const events = parser.parse(content).events;
     const questEvent = events.find((e) => e.fields?.questId);
     expect(questEvent).toBeUndefined();
+  });
+
+  it("parses RagfairOfferSold as ragfair_sale", () => {
+    const parser = new PushNotificationsLogsParser();
+    const content = [
+      "2025-12-08 15:02:22.000|1.0.0.2.42157|Info|push-notifications|Got notification | RagfairOfferSold",
+      '{ "type": "RagfairOfferSold", "eventId": "e-sale", "offerId": "off1", "handbookId": "tpl_sale", "count": 3 }',
+    ].join("\n");
+    const events = parser.parse(content).events;
+    expect(events[0].eventFamily).toBe("ragfair_sale");
+    expect(events[0].fields?.offerId).toBe("off1");
+    expect(events[0].fields?.handbookId).toBe("tpl_sale");
+    expect(events[0].fields?.saleCount ?? events[0].fields?.count).toBe(3);
+    expect(events[0].fields?.tpl).toBe("tpl_sale");
   });
 });
 

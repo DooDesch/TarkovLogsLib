@@ -79,17 +79,25 @@ function classify(message, continuation = []) {
         const notificationType = typeMatch?.[1]?.trim();
         // Try to parse JSON from continuation lines
         let payload;
+        let ragfairInfo;
         let questInfo;
         if (continuation.length > 0) {
             const jsonStr = continuation.join("\n");
             try {
                 const parsed = JSON.parse(jsonStr);
                 payload = parseNotificationPayload(notificationType, parsed);
+                ragfairInfo = extractRagfairInfo(notificationType, parsed);
                 questInfo = extractQuestInfo(notificationType, parsed);
             }
             catch {
                 // JSON parsing failed, payload remains undefined
             }
+        }
+        if (ragfairInfo) {
+            return {
+                eventFamily: "ragfair_sale",
+                fields: { notificationType, payload, ...ragfairInfo },
+            };
         }
         return {
             eventFamily: "simple_notification",
@@ -100,6 +108,10 @@ function classify(message, continuation = []) {
                 questStatus: questInfo?.questStatus,
                 questRewardRubles: questInfo?.questRewardRubles,
                 questRewardItems: questInfo?.questRewardItems,
+                questTraderId: questInfo?.questTraderId,
+                questMessageType: questInfo?.questMessageType,
+                questMessageText: questInfo?.questMessageText,
+                questRewardItemsCounts: questInfo?.questRewardItemsCounts,
             },
         };
     }
@@ -155,8 +167,12 @@ function extractQuestInfo(notificationType, data) {
         if (textLower.includes("quest") || textLower.includes("start"))
             questStatus = "started";
     }
+    const questTraderId = data?.dialogId;
+    const questMessageType = message?.type;
+    const questMessageText = typeof message?.text === "string" ? message.text : undefined;
     let questRewardRubles;
     const questRewardItems = [];
+    const questRewardItemsCounts = {};
     const items = message?.items?.data;
     if (items) {
         for (const item of items) {
@@ -171,17 +187,40 @@ function extractQuestInfo(notificationType, data) {
             }
             else {
                 questRewardItems.push(tpl);
+                questRewardItemsCounts[tpl] = (questRewardItemsCounts[tpl] ?? 0) + 1;
             }
         }
     }
-    if (!questId && !questStatus && !questRewardItems.length && questRewardRubles === undefined)
+    if (!questId &&
+        !questStatus &&
+        !questRewardItems.length &&
+        questRewardRubles === undefined &&
+        !questTraderId &&
+        !questMessageType &&
+        !questMessageText)
         return undefined;
     return {
         questId,
         questStatus,
         questRewardRubles,
         questRewardItems: questRewardItems.length ? questRewardItems : undefined,
+        questTraderId,
+        questMessageType,
+        questMessageText,
+        questRewardItemsCounts: Object.keys(questRewardItemsCounts).length ? questRewardItemsCounts : undefined,
     };
+}
+function extractRagfairInfo(notificationType, data) {
+    if ((notificationType ?? "").toLowerCase() !== "ragfairoffersold")
+        return undefined;
+    const offerId = data?.offerId;
+    const handbookId = data?.handbookId;
+    const count = typeof data?.count === "number" ? data.count : undefined;
+    // Try to derive tpl from handbookId (if present) or from payload
+    const tpl = handbookId;
+    if (!offerId && !handbookId && count === undefined)
+        return undefined;
+    return { offerId, handbookId, count, tpl };
 }
 function parseNotificationPayload(notificationType, data) {
     if (!notificationType)

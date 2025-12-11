@@ -72,6 +72,7 @@ describe("Analytics & Insights correctness", () => {
     expect(stats.network.metrics.totalPacketsLost).toBe(3);
     expect(stats.network.metrics.totalPacketsSent).toBe(100);
     expect(stats.network.metrics.totalPacketsReceived).toBe(97);
+    expect(stats.network.metrics.disconnectReasons?.["7"]).toBe(1);
   });
 
   it("deduplicates startup sessions across logs", async () => {
@@ -115,6 +116,7 @@ describe("Analytics & Insights correctness", () => {
           questStatus: "completed",
           questRewardRubles: 12345,
           questRewardItems: ["item_tpl_1", "item_tpl_1"],
+          questTraderId: "prapor",
         },
       }),
     ]);
@@ -126,5 +128,6 @@ describe("Analytics & Insights correctness", () => {
     expect(stats.quests[0].status).toBe("completed");
     expect(stats.quests[0].rewardRubles).toBe(12345);
     expect(stats.quests[0].rewardItems?.item_tpl_1).toBe(2);
+    expect(stats.quests[0].traderId).toBe("prapor");
   });
 });

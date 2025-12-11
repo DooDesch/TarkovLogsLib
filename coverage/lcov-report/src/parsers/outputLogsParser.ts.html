@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">21.42% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>3/14</span>
+                <span class='fraction'>14/14</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">16.66% </span>
+                <span class="strong">83.33% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>3/18</span>
+                <span class='fraction'>15/18</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">25% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/4</span>
+                <span class='fraction'>4/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">21.42% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>3/14</span>
+                <span class='fraction'>14/14</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -118,24 +118,27 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -146,10 +149,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -159,11 +159,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { LogParser, OutputLogEvent, ParsedLogResult } from "../types/index.js";
 import { deriveMetaFromEvents, groupByHeader, normalizeTimestamp } from "./base.js";
@@ -180,17 +180,17 @@ export class OutputLogsParser implements LogParser {
     );
   }
 &nbsp;
-<span class="fstat-no" title="function not covered" >  parse(c</span>ontent: string, filePath?: string): ParsedLogResult&lt;OutputLogEvent&gt; {
-    const <span class="cstat-no" title="statement not covered" >groups = groupByHeader(content, HEADER_REGEX);</span>
-    const events: OutputLogEvent[] = <span class="cstat-no" title="statement not covered" >groups.map(<span class="fstat-no" title="function not covered" >({</span> match, continuation }) =&gt; {</span>
-      const { timestamp = <span class="branch-0 cbranch-no" title="branch not covered" >"", v</span>ersion = <span class="branch-0 cbranch-no" title="branch not covered" >"", l</span>evel = <span class="branch-0 cbranch-no" title="branch not covered" >"Info", m</span>essage = <span class="branch-0 cbranch-no" title="branch not covered" >"" }</span> =
-        (<span class="cstat-no" title="statement not covered" >match.groups ?? {}) as Record&lt;string, string&gt;;</span>
-      const { family, hint } = <span class="cstat-no" title="statement not covered" >classify(message);</span>
-<span class="cstat-no" title="statement not covered" >      return {</span>
+  parse(content: string, filePath?: string): ParsedLogResult&lt;OutputLogEvent&gt; {
+    const groups = groupByHeader(content, HEADER_REGEX);
+    const events: OutputLogEvent[] = groups.map(({ match, continuation }) =&gt; {
+      const { timestamp = "", version = "", level = "Info", message = "" } =
+        (match.groups ?? <span class="branch-1 cbranch-no" title="branch not covered" >{}) as Record&lt;string, string&gt;;</span>
+      const { family, hint } = classify(message);
+      return {
         logType: "output",
         timestamp: normalizeTimestamp(timestamp),
         timestampRaw: timestamp,
-        version: version.trim() || undefined,
+        version: version.trim() || <span class="branch-1 cbranch-no" title="branch not covered" >undefined,</span>
         level: level.trim() as OutputLogEvent["level"],
         component: "output",
         message: message.trim(),
@@ -200,7 +200,7 @@ export class OutputLogsParser implements LogParser {
       };
     });
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    return {</span>
+    return {
       filePath,
       logType: "output",
       events,
@@ -209,12 +209,12 @@ export class OutputLogsParser implements LogParser {
   }
 }
 &nbsp;
-function <span class="fstat-no" title="function not covered" >classify(m</span>essage: string): { family: string; hint?: string } {
-  const trimmed = <span class="cstat-no" title="statement not covered" >message.trim();</span>
-  const parts = <span class="cstat-no" title="statement not covered" >trimmed.split("|");</span>
-  const hint = <span class="cstat-no" title="statement not covered" >parts.length &gt; 1 ? parts[0] : undefined;</span>
-  const prefix = <span class="cstat-no" title="statement not covered" >hint ?? trimmed.slice(0, 40);</span>
-<span class="cstat-no" title="statement not covered" >  return { family: prefix, hint };</span>
+function classify(message: string): { family: string; hint?: string } {
+  const trimmed = message.trim();
+  const parts = trimmed.split("|");
+  const hint = parts.length &gt; 1 ? parts[0] : undefined;
+  const prefix = hint ?? trimmed.slice(0, 40);
+  return { family: prefix, hint };
 }
 &nbsp;</pre></td></tr></table></pre>
 
@@ -223,7 +223,7 @@ function <span class="fstat-no" title="function not covered" >classify(m</span>e
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-12-11T18:57:17.034Z
+                at 2025-12-11T21:25:36.767Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

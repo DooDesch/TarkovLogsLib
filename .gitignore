@@ -7,3 +7,6 @@ node_modules
 dist-process
 dist-stats
 dist-insights
+dist-process-enriched
+dist-stats-enriched
+dist-insights-enriched

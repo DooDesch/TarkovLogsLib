@@ -198,6 +198,11 @@ export class TarkovLogsAnalytics {
         case "send_disconnect":
           network.disconnects = (network.disconnects ?? 0) + 1;
           entry.disconnect += 1;
+          if (fields?.disconnectReason !== undefined) {
+            network.metrics.disconnectReasons = network.metrics.disconnectReasons ?? {};
+            const key = String(fields.disconnectReason);
+            network.metrics.disconnectReasons[key] = (network.metrics.disconnectReasons[key] ?? 0) + 1;
+          }
           break;
         case "timeout":
           network.timeouts += 1;
@@ -306,6 +311,8 @@ export class TarkovLogsAnalytics {
         relatedEvents: [],
         traderId: undefined,
         traderName: undefined,
+        rewardRubles: undefined,
+        rewardItems: undefined,
       };
       const resolved = await this.resolveQuest(questId);
       if (resolved) {
@@ -332,12 +339,28 @@ export class TarkovLogsAnalytics {
     if (typeof rewardRub === "number") {
       quests[questId].rewardRubles = (quests[questId].rewardRubles ?? 0) + rewardRub;
     }
+    const rewardItemsCounts =
+      (event.fields as any)?.questRewardItemsCounts as Record<string, number> | undefined;
     const rewardItems = (event.fields as any)?.questRewardItems as string[] | undefined;
-    if (Array.isArray(rewardItems)) {
+    if (rewardItemsCounts || rewardItems) {
       quests[questId].rewardItems = quests[questId].rewardItems ?? {};
-      for (const tpl of rewardItems) {
-        quests[questId].rewardItems![tpl] = (quests[questId].rewardItems![tpl] ?? 0) + 1;
+      if (rewardItemsCounts) {
+        for (const [tpl, cnt] of Object.entries(rewardItemsCounts)) {
+          quests[questId].rewardItems![tpl] = (quests[questId].rewardItems![tpl] ?? 0) + cnt;
+        }
       }
+      if (rewardItems) {
+        for (const tpl of rewardItems) {
+          quests[questId].rewardItems![tpl] = (quests[questId].rewardItems![tpl] ?? 0) + 1;
+        }
+      }
+    }
+
+    // Trader from quest fields (e.g., dialogId)
+    const traderFromEvent = (event.fields as any)?.questTraderId;
+    if (!quests[questId].traderId && traderFromEvent) {
+      quests[questId].traderId = traderFromEvent;
+      quests[questId].traderName = await this.resolveTraderName(traderFromEvent, traders);
     }
   }
 

@@ -281,6 +281,7 @@ export interface PushNotificationsLogEvent extends BaseLogEvent<"push-notificati
     | "received"
     | "notification"
     | "simple_notification"
+    | "ragfair_sale"
     | "ping"
     | "dropped"
     | "other";
@@ -302,6 +303,15 @@ export interface PushNotificationsLogEvent extends BaseLogEvent<"push-notificati
     questStatus?: string;
     questRewardRubles?: number;
     questRewardItems?: string[];
+    questTraderId?: string;
+    questMessageType?: string | number;
+    questMessageText?: string;
+    questRewardItemsCounts?: Record<string, number>;
+    /** Ragfair sale info */
+    offerId?: string;
+    handbookId?: string;
+    saleCount?: number;
+    tpl?: string;
   };
 }
 

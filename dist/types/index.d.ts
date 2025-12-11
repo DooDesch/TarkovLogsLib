@@ -207,7 +207,7 @@ export interface NotificationPayload {
     rawData?: Record<string, unknown>;
 }
 export interface PushNotificationsLogEvent extends BaseLogEvent<"push-notifications"> {
-    eventFamily: "connection_params" | "batch_result" | "received" | "notification" | "simple_notification" | "ping" | "dropped" | "other";
+    eventFamily: "connection_params" | "batch_result" | "received" | "notification" | "simple_notification" | "ragfair_sale" | "ping" | "dropped" | "other";
     fields?: {
         url?: string;
         token?: string;
@@ -226,6 +226,15 @@ export interface PushNotificationsLogEvent extends BaseLogEvent<"push-notificati
         questStatus?: string;
         questRewardRubles?: number;
         questRewardItems?: string[];
+        questTraderId?: string;
+        questMessageType?: string | number;
+        questMessageText?: string;
+        questRewardItemsCounts?: Record<string, number>;
+        /** Ragfair sale info */
+        offerId?: string;
+        handbookId?: string;
+        saleCount?: number;
+        tpl?: string;
     };
 }
 export interface SeasonsLogEvent extends BaseLogEvent<"seasons"> {

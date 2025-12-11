@@ -106,12 +106,24 @@ function classify(
 
     // Try to parse JSON from continuation lines
     let payload: NotificationPayload | undefined;
+    let ragfairInfo:
+      | {
+          offerId?: string;
+          handbookId?: string;
+          count?: number;
+          tpl?: string;
+        }
+      | undefined;
     let questInfo:
       | {
           questId?: string;
           questStatus?: string;
           questRewardRubles?: number;
           questRewardItems?: string[];
+          questTraderId?: string;
+          questMessageType?: string | number;
+          questMessageText?: string;
+          questRewardItemsCounts?: Record<string, number>;
         }
       | undefined;
     if (continuation.length > 0) {
@@ -119,10 +131,18 @@ function classify(
       try {
         const parsed = JSON.parse(jsonStr);
         payload = parseNotificationPayload(notificationType, parsed);
+        ragfairInfo = extractRagfairInfo(notificationType, parsed);
         questInfo = extractQuestInfo(notificationType, parsed);
       } catch {
         // JSON parsing failed, payload remains undefined
       }
+    }
+
+    if (ragfairInfo) {
+      return {
+        eventFamily: "ragfair_sale",
+        fields: { notificationType, payload, ...ragfairInfo },
+      };
     }
 
     return {
@@ -134,6 +154,10 @@ function classify(
         questStatus: questInfo?.questStatus,
         questRewardRubles: questInfo?.questRewardRubles,
         questRewardItems: questInfo?.questRewardItems,
+        questTraderId: questInfo?.questTraderId,
+        questMessageType: questInfo?.questMessageType,
+        questMessageText: questInfo?.questMessageText,
+        questRewardItemsCounts: questInfo?.questRewardItemsCounts,
       },
     };
   }
@@ -160,6 +184,10 @@ function extractQuestInfo(
   questStatus?: string;
   questRewardRubles?: number;
   questRewardItems?: string[];
+      questTraderId?: string;
+      questMessageType?: string | number;
+      questMessageText?: string;
+      questRewardItemsCounts?: Record<string, number>;
 } | undefined {
   const typeLower = (notificationType ?? "").toLowerCase();
   const dataTypeLower = String((data as any)?.type ?? "").toLowerCase();
@@ -197,8 +225,13 @@ function extractQuestInfo(
     if (textLower.includes("quest") || textLower.includes("start")) questStatus = "started";
   }
 
+  const questTraderId = (data as any)?.dialogId as string | undefined;
+  const questMessageType = message?.type as string | number | undefined;
+  const questMessageText = typeof message?.text === "string" ? message.text : undefined;
+
   let questRewardRubles: number | undefined;
   const questRewardItems: string[] = [];
+  const questRewardItemsCounts: Record<string, number> = {};
   const items = (message as any)?.items?.data as Array<Record<string, unknown>> | undefined;
   if (items) {
     for (const item of items) {
@@ -210,17 +243,45 @@ function extractQuestInfo(
         if (typeof count === "number") questRewardRubles = count;
       } else {
         questRewardItems.push(tpl);
+        questRewardItemsCounts[tpl] = (questRewardItemsCounts[tpl] ?? 0) + 1;
       }
     }
   }
 
-  if (!questId && !questStatus && !questRewardItems.length && questRewardRubles === undefined) return undefined;
+  if (
+    !questId &&
+    !questStatus &&
+    !questRewardItems.length &&
+    questRewardRubles === undefined &&
+    !questTraderId &&
+    !questMessageType &&
+    !questMessageText
+  )
+    return undefined;
   return {
     questId,
     questStatus,
     questRewardRubles,
     questRewardItems: questRewardItems.length ? questRewardItems : undefined,
+    questTraderId,
+    questMessageType,
+    questMessageText,
+    questRewardItemsCounts: Object.keys(questRewardItemsCounts).length ? questRewardItemsCounts : undefined,
   };
+}
+
+function extractRagfairInfo(
+  notificationType: string | undefined,
+  data: Record<string, unknown>,
+): { offerId?: string; handbookId?: string; count?: number; tpl?: string } | undefined {
+  if ((notificationType ?? "").toLowerCase() !== "ragfairoffersold") return undefined;
+  const offerId = (data as any)?.offerId as string | undefined;
+  const handbookId = (data as any)?.handbookId as string | undefined;
+  const count = typeof (data as any)?.count === "number" ? (data as any).count : undefined;
+  // Try to derive tpl from handbookId (if present) or from payload
+  const tpl = handbookId;
+  if (!offerId && !handbookId && count === undefined) return undefined;
+  return { offerId, handbookId, count, tpl };
 }
 
 function parseNotificationPayload(

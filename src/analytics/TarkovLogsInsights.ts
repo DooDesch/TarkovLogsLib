@@ -333,12 +333,15 @@ export class TarkovLogsInsights {
         }
         quests[questId].relatedEvents.push(e);
         if (!quests[questId].startedAt) quests[questId].startedAt = e.timestamp;
+        const questStatus =
+          ((e.fields as any)?.questStatus as string | undefined)?.toLowerCase();
         const msg = e.message.toLowerCase();
-        if (msg.includes("completed")) {
+
+        if (questStatus === "completed" || msg.includes("completed")) {
           quests[questId].status = "completed";
           quests[questId].completedAt =
             quests[questId].completedAt ?? e.timestamp;
-        } else if (msg.includes("fail")) {
+        } else if (questStatus === "failed" || msg.includes("fail")) {
           quests[questId].status = "failed";
           quests[questId].failedAt = quests[questId].failedAt ?? e.timestamp;
         } else {
